@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const styles = {
   overlay: {
@@ -46,6 +46,7 @@ const styles = {
 
 function Modal() {
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState('');
 
   const usernameRef = useRef(null);
   const emailRef = useRef(null);
@@ -54,15 +55,17 @@ function Modal() {
 
   const handleOpenForm = () => {
     setShowForm(true);
+    setError('');
   };
 
   const handleCloseForm = () => {
     setShowForm(false);
+    setError('');
   };
 
   const handleOverlayClick = (e) => {
-    if (e.target.className === 'modal') {
-      setShowForm(false);
+    if (e.target.classList.contains('modal')) {
+      handleCloseForm();
     }
   };
 
@@ -75,36 +78,44 @@ function Modal() {
     const dob = dobRef.current.value;
 
     if (!username || !email || !phone || !dob) {
-      alert('Please fill out all the fields.');
+      setError('Please fill out all the fields.');
       return;
     }
 
     if (!email.includes('@')) {
-      alert('Invalid email. Please check your email address.');
+      setError('Please include @ in the email address. {Username} is missing an @.');
       return;
     }
 
     if (!/^\d{10}$/.test(phone)) {
-      alert('Invalid phone number. Please enter a 10-digit phone number.');
+      setError('Invalid phone number');
       return;
     }
 
     const dobDate = new Date(dob);
     const today = new Date();
     if (dobDate > today) {
-      alert('Invalid date of birth. Date cannot be in the future.');
+      setError('Invalid date of birth');
       return;
     }
 
-    // ✅ Reset fields after successful submission
+    // Reset values and close modal
     usernameRef.current.value = '';
     emailRef.current.value = '';
     phoneRef.current.value = '';
     dobRef.current.value = '';
-
-    // ✅ Close the modal
-    setShowForm(false);
+    setError('');
+    handleCloseForm();
   };
+
+  // Close on Escape key press
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') handleCloseForm();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   return (
     <div>
@@ -168,8 +179,15 @@ function Modal() {
                   style={styles.inputBox}
                 />
               </div>
+
+              {error && (
+                <p style={{ color: 'red', marginBottom: '10px' }}>{error}</p>
+              )}
+
               <div style={styles.buttonRow}>
-                <button type="submit" className="submit-button" style={styles.submitBtn}>Submit</button>
+                <button type="submit" id="submit-button" className="submit-button" style={styles.submitBtn}>
+                  Submit
+                </button>
               </div>
             </form>
           </div>
